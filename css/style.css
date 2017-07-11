@@ -1,6 +1,6 @@
 .container .row{
   margin-top: 10px;
-  height: 2000px;
+  
 }
 #carousel{
   margin-top: 50px;
@@ -11,5 +11,7 @@
 }
 a.spoiler.collapsed:after{
   content: " [+]";
-
+}
+.nav-tabs{
+  margin-bottom: 15px;
 }
