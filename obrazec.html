@@ -116,8 +116,25 @@
   <a class="list-group-item" href="#"><i class="fa fa-cog fa-fw" aria-hidden="true"></i>&nbsp; Settings</a>
 </div>
       <p>
-         <a href="#" class="btn btn-default"><i class="fa fa-bars" aria-hidden="true"style="font-size:200%"></i></a>
-         <a href="#" class="btn btn-primary">кнопка</a>
+         <a href="#" class="btn btn-default">
+           <i class="fa fa-bars" aria-hidden="true"style="font-size:200%"></i>
+         </a>
+         <button type="button" class="btn btn-default"
+                     data-toggle="tooltip"
+                     data-placement="left"
+                     title="подсказка"
+                     data-trigger="click">
+           <i class="fa fa-spinner fa-spin" ></i>
+         </button>
+         <button type="button" class="btn btn-primary"
+                 data-toggle="popover"
+                 title="заголовок окна"
+                 data-content="текст окна или какое нибудь оповещение"
+                 data-placement="top"
+                 data-trigger="hover">
+                 кнопка
+               </button>
+
          <a href="#" class="btn btn-success">кнопка</a>
          <a href="#" class="btn btn-warning">кнопка</a>
          <a href="#" class="btn btn-info">кнопка</a>
@@ -368,5 +385,12 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
+    <script>
+     $ (function () {
+       $('[data-toggle="tooltip"]') .tooltip();
+       $('[data-toggle="popover"]') .popover();
+
+     });
+    </script>
   </body>
 </html>
