@@ -39,3 +39,314 @@ a.spoiler.collapsed:after{
     content: '3 .col-xs-4';
   }
 }
+$(document).ready(function(){
+    /* after the page has finished loading */
+
+    $('#contact-form').jqTransform();
+    /* transform the form using the jqtransform plugin */
+
+    $("button").click(function(){
+
+        $(".formError").hide();
+        /* hide all the error tooltips */
+    });
+
+    var use_ajax=true;
+    $.validationEngine.settings={};
+    /* initialize the settings object for the formValidation plugin */
+
+    $("#contact-form").validationEngine({   /* create the form validation */
+        inlineValidation: false,
+        promptPosition: "centerRight",
+        success :  function(){use_ajax=true},   /* if everything is OK enable AJAX */
+        failure : function(){use_ajax=false}    /* in case of validation failure disable AJAX */
+     })
+
+    $("#contact-form").submit(function(e){
+
+            if(!$('#subject').val().length)
+            {
+                $.validationEngine.buildPrompt(".jqTransformSelectWrapper","* This field is required","error")
+                /* a custom validation tooltip, using the buildPrompt method */
+
+                return false;
+            }
+
+            if(use_ajax)
+            {
+                $('#loading').css('visibility','visible');
+                /* show the rotating gif */
+
+                $.post('submit.php',$(this).serialize()+'&ajax=1',
+                /* using jQuery's post method to send data */
+
+                function(data){
+                    if(parseInt(data)==-1)
+                        $.validationEngine.buildPrompt("#captcha","* Wrong verification number!","error");
+                        /* if there is an error, build a custom error tooltip for the captcha */
+                    else
+                    {
+                        $("#contact-form").hide('slow').after('<h1>Thank you!</h1>');
+                        /* show the confirmation message */
+                    }
+
+                    $('#loading').css('visibility','hidden');
+                    /* hide the rotating gif */
+                });
+            }
+
+e.preventDefault(); /* stop the default form submit */
+})
+
+});
+body,h1,h2,h3,p,quote,small,form,input,ul,li,ol,label{
+    /* reset some of the page elements */
+    margin:0px;
+    padding:0px;
+}
+
+body{
+    color:#555555;
+    font-size:13px;
+    background: url(img/dark_wood_texture.jpg) #282828;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+.clear{
+    clear:both;
+}
+
+#main-container{
+    width:400px;
+    margin:30px auto;
+}
+
+#form-container{
+    background-color:#f5f5f5;
+    padding:15px;
+
+    /* rounded corners */
+    -moz-border-radius:12px;
+    -khtml-border-radius: 12px;
+    -webkit-border-radius: 12px;
+    border-radius:12px;
+}
+
+td{
+    /* prevent multiline text */
+    white-space:nowrap;
+}
+
+a, a:visited {
+    color:#00BBFF;
+    text-decoration:none;
+    outline:none;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+h1{
+    color:#777777;
+    font-size:22px;
+    font-weight:normal;
+    text-transform:uppercase;
+    margin-bottom:5px;
+}
+
+h2{
+    font-weight:normal;
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    color:#aaaaaa;
+    margin-bottom:15px;
+
+    border-bottom:1px solid #eeeeee;
+    margin-bottom:15px;
+    padding-bottom:10px;
+}
+
+label{
+    text-transform:uppercase;
+    font-size:10px;
+    font-family:Tahoma,Arial,Sans-serif;
+}
+
+textarea{
+    color:#404040;
+    font-family:Arial,Helvetica,sans-serif;
+    font-size:12px;
+}
+
+td > button{
+    /* A special CSS selector that targets non-IE6 browsers */
+    text-indent:8px;
+}
+
+.error{
+    /* this class is used if JS is disabled */
+    background-color:#AB0000;
+    color:white;
+    font-size:10px;
+    font-weight:bold;
+    margin-top:10px;
+    padding:10px;
+    text-transform:uppercase;
+    width:300px;
+}
+
+#loading{
+    /* the loading gif is hidden on page load */
+    position:relative;
+    bottom:9px;
+    visibility:hidden;
+}
+
+.tutorial-info{
+    color:white;
+    text-align:center;
+    padding:10px;
+    margin-top:10px;
+}
+session_name("fancyform");
+session_start();
+
+$_SESSION['n1'] = rand(1,20);   /* generate the first number */
+$_SESSION['n2'] = rand(1,20);   /* then the second */
+$_SESSION['expect'] = $_SESSION['n1']+$_SESSION['n2'];  /* the expected result */
+
+/* the code below is used if JS has been disabled by the user */
+$str='';
+if($_SESSION['errStr']) /* if submit.php returns an error string in the session array */
+{
+    $str='<div class="error">'.$_SESSION['errStr'].'</div>';
+    unset($_SESSION['errStr']); /* will be shown only once */
+}
+
+$success='';
+if($_SESSION['sent'])
+{
+    $success='<h1>Thank you!</h1>'; /* the success message */
+
+    $css='<style type="text/css">#contact-form{display:none;}</style>';
+    /* a special CSS rule that hides our form */
+
+    unset($_SESSION['sent']);
+}
+As you can see, we use the $_SESSION array to store the two random numbers and the expected result. This is later used in submit.php to confirm the captcha has been solved.
+
+Another interesting moment is line 21 where we define a custom CSS class. This hides the form, so that the only thing shown is the success message in case the visitor has disabled JS.
+
+submit.php
+
+require "phpmailer/class.phpmailer.php";
+
+session_name("fancyform");  /* starting the session */
+session_start();
+
+foreach($_POST as $k=>$v)
+{
+    /* if magic_quotes is enabled, strip the post array */
+    if(ini_get('magic_quotes_gpc'))
+    $_POST[$k]=stripslashes($_POST[$k]);
+
+    $_POST[$k]=htmlspecialchars(strip_tags($_POST[$k]));
+    /* escape the special chars */
+}
+
+$err = array();
+
+/* some error checks */
+if(!checkLen('name'))
+    $err[]='The name field is too short or empty!';
+
+if(!checkLen('email'))
+    $err[]='The email field is too short or empty!';
+else if(!checkEmail($_POST['email']))
+    $err[]='Your email is not valid!';
+
+if(!checkLen('subject'))
+    $err[]='You have not selected a subject!';
+
+if(!checkLen('message'))
+    $err[]='The message field is too short or empty!';
+
+/* compare the received captcha code to the one in the session array */
+if((int)$_POST['captcha'] != $_SESSION['expect'])
+    $err[]='The captcha code is wrong!';
+
+/* if there are errors */
+if(count($err))
+{
+    /* if the form was submitted via AJAX */
+    if($_POST['ajax'])
+    {
+        echo '-1';
+    }
+
+    /* else fill the SESSION array and redirect back to the form */
+    else if($_SERVER['HTTP_REFERER'])
+    {
+        $_SESSION['errStr'] = implode('<br />',$err);
+        $_SESSION['post']=$_POST;
+
+        header('Location: '.$_SERVER['HTTP_REFERER']);
+    }
+
+    exit;
+}
+
+/* the email body */
+$msg=
+'Name:  '.$_POST['name'].'<br />
+Email:  '.$_POST['email'].'<br />
+IP: '.$_SERVER['REMOTE_ADDR'].'<br /><br />
+
+Message:<br /><br />
+
+'.nl2br($_POST['message']).'
+
+';
+
+$mail = new PHPMailer();    /* using PHPMailer */
+$mail->IsMail();
+
+$mail->AddReplyTo($_POST['email'], $_POST['name']);
+$mail->AddAddress($emailAddress);
+$mail->SetFrom($_POST['email'], $_POST['name']);
+$mail->Subject = "A new ".mb_strtolower($_POST['subject'])." from ".$_POST['name']." | contact form feedback";
+
+$mail->MsgHTML($msg);
+
+$mail->Send();
+
+unset($_SESSION['post']);   /* unsetting */
+
+/* the form was successfully sent */
+if($_POST['ajax'])
+{
+    echo '1';
+}
+else
+{
+    $_SESSION['sent']=1;
+
+    if($_SERVER['HTTP_REFERER'])
+        header('Location: '.$_SERVER['HTTP_REFERER']);
+
+    exit;
+}
+
+/* some helpful functions */
+function checkLen($str,$len=2)
+{
+    return isset($_POST[$str]) && mb_strlen(strip_tags($_POST[$str]),"utf-8") > $len;
+}
+
+function checkEmail($str)
+{
+    return preg_match("/^[\.A-z0-9_\-\+]+[@][A-z0-9_\-]+([.][A-z0-9_\-]+)+[A-z]{1,4}$/", $str);
+}
